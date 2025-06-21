@@ -1,40 +1,35 @@
-// server.js
-const express = require('express');
-const path = require('path');
-const multer = require('multer');
-const { pdfMerger } = require('./merge');
+import express from 'express';
+import path from 'path';
+import multer from 'multer';
+import { fileURLToPath } from 'url';
+import { pdfMerger } from './merge.js';
 
 const app = express();
+const upload = multer({ dest: 'uploads/' });
 const port = process.env.PORT || 3000;
 
-// Ensure your folders exist: uploads/ and public/
-const upload = multer({ dest: 'uploads/' });
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-// Serve static files (merged PDF will live here)
-app.use('/static', express.static(path.join(__dirname, 'public')));
+app.use('/static', express.static('public'));
 
-// Serve your HTML form
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'templates', 'index.html'));
+    res.sendFile(path.join(__dirname, 'templates/index.html'));
 });
 
-// Handle the merge request
 app.post('/merge', upload.array('pdfs', 2), async (req, res) => {
-  try {
-    const file1 = path.join(__dirname, req.files[0].path);
-    const file2 = path.join(__dirname, req.files[1].path);
-
-    await pdfMerger(file1, file2);
-
-    // Redirect to the merged file
-    res.redirect('/static/merged.pdf');
-  } catch (err) {
-    console.error('Merge error:', err);
-    res.status(500).send('Failed to merge PDFs.');
-  }
+    try {
+        await pdfMerger(
+            path.join(__dirname, req.files[0].path),
+            path.join(__dirname, req.files[1].path)
+        );
+        res.redirect('/static/merged.pdf');
+    } catch (err) {
+        console.error('Merge Error:', err);
+        res.status(500).send('Internal Server Error during PDF merge.');
+    }
 });
 
-// Start server
 app.listen(port, () => {
-  console.log(`App listening on http://localhost:${port}`);
+    console.log(`Server running at http://localhost:${port}`);
 });
