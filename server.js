@@ -17,18 +17,22 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'templates/index.html'));
 });
 
+// In server.js, modify your POST handler to:
 app.post('/merge', upload.array('pdfs', 2), async (req, res) => {
-    try {
-        await pdfMerger(
-            path.join(__dirname, req.files[0].path),
-            path.join(__dirname, req.files[1].path)
-        );
-        res.redirect('/static/merged.pdf');
-    } catch (err) {
-        console.error('Merge Error:', err);
-        res.status(500).send('Internal Server Error during PDF merge.');
-    }
+  try {
+    const file1 = path.join(__dirname, req.files[0].path);
+    const file2 = path.join(__dirname, req.files[1].path);
+
+    await pdfMerger(file1, file2);
+
+    res.redirect('/static/merged.pdf');
+  } catch (err) {
+    console.error('Merge Error:', err);
+    // Send back the real error message for debugging:
+    res.status(500).send(`PDF merge failed: ${err.message}`);
+  }
 });
+
 
 app.listen(port, () => {
     console.log(`Server running at http://localhost:${port}`);
